@@ -3,7 +3,7 @@ import { IconType } from "react-icons";
 
 type ButtonProps = {
   icon?: IconType;
-  variant?: "default" | "outline" | "text";
+  variant?: "default" | "outline" | "text" | "primary";
 } & ComponentPropsWithoutRef<"button">;
 
 export default function Button({
@@ -21,6 +21,8 @@ export default function Button({
           ? "text-black dark:text-gray-300 bg-gray-50 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-900"
           : variant === "outline"
           ? "border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 bg-gray-50 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+          : variant === "primary"
+          ? "bg-primary-500 text-white hover:bg-primary-600 hover:text-white shadow-sm"
           : "text-black dark:text-gray-300 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
       }
       ${className}`}
