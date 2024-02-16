@@ -1,12 +1,45 @@
 import { useAppContext } from "@/components/AppContext";
 import Markdown from "@/components/common/Markdown";
-import React from "react";
+import { ActionType } from "@/reducers/AppReducer";
+import React, { useEffect } from "react";
 import { SiOpenai } from "react-icons/si";
 
 export default function MessageList() {
   const {
-    state: { messageList, streamingId },
+    state: { messageList, streamingId, selectedChat },
+    dispatch,
   } = useAppContext();
+
+  async function getData(chatId: string) {
+    const response = await fetch(`/api/message/list?chatId=${chatId}`, {
+      method: "GET",
+    });
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { data } = await response.json();
+    // 更新全局状态中的消息列表
+    dispatch({
+      type: ActionType.UPDATE,
+      field: "messageList",
+      value: data.list,
+    });
+  }
+
+  useEffect(() => {
+    if (selectedChat) {
+      getData(selectedChat.id);
+    } else {
+      // 如果没有选中的对话，则清空消息列表
+      dispatch({
+        type: ActionType.UPDATE,
+        field: "messageList",
+        value: [],
+      });
+    }
+  }, [selectedChat]);
+
   return (
     <div className="w-full pt-10 pb-48 dark:text-gray-300">
       <ul>
