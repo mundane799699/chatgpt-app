@@ -1,4 +1,5 @@
 import { useAppContext } from "@/components/AppContext";
+import { useEventBusContext } from "@/components/EventBusContext";
 import Button from "@/components/common/Button";
 import { ActionType } from "@/reducers/AppReducer";
 import { Message, MessageRequestBody } from "@/types/chat";
@@ -11,10 +12,12 @@ import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("");
   const stopRef = useRef(false);
+  const chatIdRef = useRef("");
   const {
     state: { messageList, currentModel, streamingId },
     dispatch,
   } = useAppContext();
+  const { publish } = useEventBusContext();
 
   async function createOrUpdateMessage(message: Message) {
     const response = await fetch("/api/message/update", {
@@ -29,7 +32,26 @@ export default function ChatInput() {
       return;
     }
     const { data } = await response.json();
+    if (!chatIdRef.current) {
+      chatIdRef.current = data.message.chatId;
+      publish("fetchChatList");
+    }
     return data.message;
+  }
+
+  async function deleteMessage(id: string) {
+    const response = await fetch(`/api/message/delete?id=${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { code } = await response.json();
+    return code === 0;
   }
 
   async function send() {
@@ -37,19 +59,25 @@ export default function ChatInput() {
       id: "",
       role: "user",
       content: messageText,
-      chatId: "",
+      chatId: chatIdRef.current,
     });
     dispatch({ type: ActionType.ADD_MESSAGE, message });
     const messages = messageList.concat([message]);
     doSend(messages);
   }
 
+  // 重新生成
   async function resend() {
     const messages = [...messageList];
     if (
       messages.length !== 0 &&
       messages[messages.length - 1].role === "assistant"
     ) {
+      const result = await deleteMessage(messages[messages.length - 1].id);
+      if (!result) {
+        console.log("delete error");
+        return;
+      }
       dispatch({
         type: ActionType.REMOVE_MESSAGE,
         message: messages[messages.length - 1],
@@ -78,12 +106,12 @@ export default function ChatInput() {
       console.log("body error");
       return;
     }
-    const responseMessage: Message = {
-      id: uuidv4(),
+    const responseMessage: Message = await createOrUpdateMessage({
+      id: "",
       role: "assistant",
       content: "",
-      chatId: "",
-    };
+      chatId: chatIdRef.current,
+    });
     dispatch({ type: ActionType.ADD_MESSAGE, message: responseMessage });
     dispatch({
       type: ActionType.UPDATE,
@@ -109,6 +137,10 @@ export default function ChatInput() {
         message: { ...responseMessage, content },
       });
     }
+    createOrUpdateMessage({
+      ...responseMessage,
+      content,
+    });
     dispatch({
       type: ActionType.UPDATE,
       field: "streamingId",

@@ -1,8 +1,9 @@
 import { groupByDate } from "@/common/util";
 import { Chat } from "@/types/chat";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { PiChatBold } from "react-icons/pi";
 import ChatItem from "./ChatItem";
+import { useEventBusContext } from "@/components/EventBusContext";
 
 export default function ChatList() {
   const [chatList, setChatList] = useState<Chat[]>([
@@ -167,6 +168,16 @@ export default function ChatList() {
   const groupList = useMemo(() => {
     return groupByDate(chatList);
   }, [chatList]);
+  const { subscribe, unsubscribe } = useEventBusContext();
+  useEffect(() => {
+    const callback: EventListener = () => {
+      console.log("fetchChatList");
+    };
+    subscribe("fetchChatList", callback);
+    return () => {
+      unsubscribe("fetchChatList", callback);
+    };
+  }, []);
   return (
     <div className="flex-1 mb-[48px] mt-2 flex flex-col overflow-y-auto">
       {groupList.map(([date, list]) => {
