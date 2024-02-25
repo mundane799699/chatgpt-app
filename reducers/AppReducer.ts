@@ -35,7 +35,7 @@ export type Action = UpdateAction | MessageAction;
 export const initState: State = {
   displayNavigation: true,
   themeMode: "light",
-  currentModel: "gpt-3.5-turbo",
+  currentModel: "gpt35",
   messageList: [],
   streamingId: "",
 };
