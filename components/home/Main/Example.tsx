@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { MdOutlineTipsAndUpdates } from "react-icons/md";
 import examples from "@/data/examples.json";
 import Button from "@/components/common/Button";
+import { useEventBusContext } from "@/components/EventBusContext";
 
 export default function Example() {
   const [showFull, setShowFull] = useState(false);
@@ -12,6 +13,7 @@ export default function Example() {
       return examples.slice(0, 15);
     }
   }, [showFull]);
+  const { publish } = useEventBusContext();
   return (
     <>
       <div className="mt-20 mb-4 text-4xl">
@@ -21,7 +23,9 @@ export default function Example() {
         {list.map((item) => {
           return (
             <li key={item.act}>
-              <Button>{item.act}</Button>
+              <Button onClick={() => publish("createNewChat", item.prompt)}>
+                {item.act}
+              </Button>
             </li>
           );
         })}

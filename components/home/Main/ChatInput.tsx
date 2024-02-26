@@ -1,5 +1,8 @@
 import { useAppContext } from "@/components/AppContext";
-import { useEventBusContext } from "@/components/EventBusContext";
+import {
+  useEventBusContext,
+  EventListener,
+} from "@/components/EventBusContext";
 import Button from "@/components/common/Button";
 import { ActionType } from "@/reducers/AppReducer";
 import { Message, MessageRequestBody } from "@/types/chat";
@@ -17,7 +20,17 @@ export default function ChatInput() {
     state: { messageList, currentModel, streamingId, selectedChat },
     dispatch,
   } = useAppContext();
-  const { publish } = useEventBusContext();
+  const { publish, subscribe, unsubscribe } = useEventBusContext();
+
+  useEffect(() => {
+    const callback: EventListener = (data) => {
+      send(data);
+    };
+    subscribe("createNewChat", callback);
+    return () => {
+      unsubscribe("createNewChat", callback);
+    };
+  }, []);
 
   useEffect(() => {
     if (chatIdRef.current === selectedChat?.id) {
@@ -68,11 +81,11 @@ export default function ChatInput() {
     return code === 0;
   }
 
-  async function send() {
+  async function send(content: string) {
     const message = await createOrUpdateMessage({
       id: "",
       role: "user",
-      content: messageText,
+      content,
       chatId: chatIdRef.current,
     });
     dispatch({ type: ActionType.ADD_MESSAGE, message });
@@ -203,7 +216,9 @@ export default function ChatInput() {
             icon={FiSend}
             disabled={messageText.trim() === "" || streamingId !== ""}
             variant="primary"
-            onClick={send}
+            onClick={() => {
+              send(messageText);
+            }}
           />
         </div>
       </div>

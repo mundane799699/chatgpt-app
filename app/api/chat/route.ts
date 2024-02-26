@@ -5,6 +5,12 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
   const { messages, model } = (await request.json()) as MessageRequestBody;
+  const newMessages = messages.map((message) => {
+    return {
+      role: message.role,
+      content: message.content,
+    };
+  });
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -16,7 +22,7 @@ export async function POST(request: NextRequest) {
             content:
               "You are ChatGPT, a large language model trained by OpenAI. Follow the user's instructions carefully. Respond using markdown.",
           },
-          ...messages,
+          ...newMessages,
         ],
         {
           maxTokens: 1024,
